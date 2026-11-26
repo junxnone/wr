@@ -111,9 +111,9 @@ ${editId === n.id ? `<textarea>${esc(n.text)}</textarea><div class="nfoot"><butt
   });
 
   navigator.storage?.persisted?.().then((p) => { $('pst').textContent = p ? ' 持久存储：已启用。' : ' 持久存储：未启用（浏览器可能在空间紧张时清理）。'; }).catch(() => {});
-  if ('serviceWorker' in navigator) addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
   draw();
 })();
 </script>
+<script src="update.js"></script>
 </body>
 </html>

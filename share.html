@@ -60,8 +60,8 @@
     d.hidden = false;
     d.innerHTML = '✓ 已保存。<a href="notes.html">查看全部笔记</a> · <a href="index.html">回到书架</a>';
   });
-  if ('serviceWorker' in navigator) addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
 })();
 </script>
+<script src="update.js"></script>
 </body>
 </html>

@@ -44,7 +44,7 @@
 <button id="nbtn" type="button" aria-label="笔记" title="记笔记">✎</button>
 <div id="menu" hidden>
   <p class="title" id="t"></p>
-  <div class="row"><a href="index.html">← 书架</a><a href="notes.html">📝 笔记</a><a id="ext" href="#" target="_blank" rel="noopener">在浏览器打开 ↗</a><button id="reload" type="button" title="跨域页面无法原地刷新，只能回到这本书的首页">回到首页</button></div>
+  <div class="row"><a href="index.html">← 书架</a><a href="notes.html">📝 笔记</a><a id="ext" href="#" target="_blank" rel="noopener">在浏览器打开 ↗</a><button id="reload" type="button" title="跨域页面无法原地刷新，只能回到这本书的首页">回到首页</button><button type="button" data-install hidden>📲 将该书添加到桌面</button></div>
 </div>
 <div id="np" hidden>
   <div class="nbar"><b id="nt">笔记</b><a href="notes.html">全部笔记 →</a><button type="button" class="btn" data-a="x" title="关闭">×</button></div>
@@ -108,7 +108,6 @@
     if (id && WRN.patch(id, (n) => { n.done = e.target.checked; })) refresh();
   });
   ta.addEventListener('keydown', (e) => { if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) add(); });
-  if ('serviceWorker' in navigator) addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
 
   fetch('books.json').then((r) => r.json()).catch(() => []).then((books) => {
     const book = books.find((b) => b.id === q.get('id'));
@@ -127,5 +126,6 @@
   });
 })();
 </script>
+<script src="update.js"></script>
 </body>
 </html>

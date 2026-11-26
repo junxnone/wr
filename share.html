@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>保存为笔记</title>
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#2563eb">
+<link rel="stylesheet" href="notes.css">
+<style>
+  * { box-sizing: border-box; }
+  body { margin: 0; padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left); background: var(--n-bg); color: var(--n-fg); font: 16px/1.6 -apple-system, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif; }
+  main { max-width: 640px; margin: 0 auto; padding: 20px 16px 48px; }
+  h1 { margin: 8px 0 12px; font-size: 1.4em; }
+  .row { display: flex; gap: 8px; justify-content: flex-end; margin-top: 12px; }
+  .done { margin-top: 12px; }
+  .done a { color: var(--n-ac); }
+</style>
+</head>
+<body>
+<main id="sh">
+  <h1>保存为笔记</h1>
+  <div class="card" id="card">
+    <label class="f" for="quote">引用（分享来的文字，可编辑；留空则不带引用）</label>
+    <textarea id="quote" rows="5"></textarea>
+    <label class="f" for="book">记到哪本书</label>
+    <select id="book"><option value="">不关联书（独立待办）</option></select>
+    <label class="f" for="text">你的想法（可选）</label>
+    <textarea id="text" rows="3" placeholder="记一条待办…"></textarea>
+  </div>
+  <div class="row"><a class="btn" href="index.html">取消</a><button class="btn pri" id="save" type="button">保存</button></div>
+  <p class="done" id="done" hidden></p>
+</main>
+<script src="notes.js"></script>
+<script>
+// Web Share Target 接收页：别的应用把选中的文字分享给本应用时到这里（manifest 里的 share_target）
+(() => {
+  const $ = (id) => document.getElementById(id);
+  const p = new URLSearchParams(location.search);
+  const title = (p.get('title') || '').trim(), text = (p.get('text') || '').trim(), url = (p.get('url') || '').trim();
+  // 分享的文字作为引用；只分享了链接就用链接；有文字又有链接时，把链接放进"想法"里
+  $('quote').value = text || url || title;
+  if (text && url && !text.includes(url)) $('text').value = url;
+
+  let books = [];
+  window.WRN.books().then((bs) => {
+    books = bs;
+    $('book').innerHTML += bs.map((b) => `<option value="${window.WRN.esc(b.id)}">${window.WRN.esc(b.title)}</option>`).join('');
+    let last = ''; try { last = localStorage.getItem('wr-last') || ''; } catch {}
+    if (bs.some((b) => b.id === last)) $('book').value = last;
+  });
+
+  $('save').addEventListener('click', () => {
+    const quote = $('quote').value.trim(), t = $('text').value.trim();
+    if (!quote && !t) return alert('没有可保存的内容');
+    const id = $('book').value, b = books.find((x) => x.id === id);
+    window.WRN.add({ book: id, title: b ? b.title : '', quote, text: t });
+    $('card').hidden = true; $('save').hidden = true;
+    const d = $('done');
+    d.hidden = false;
+    d.innerHTML = '✓ 已保存。<a href="notes.html">查看全部笔记</a> · <a href="index.html">回到书架</a>';
+  });
+  if ('serviceWorker' in navigator) addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
+})();
+</script>
+</body>
+</html>

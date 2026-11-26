@@ -22,6 +22,8 @@ foreach ($b in $books) {
     id = "../reader.html?id=$($b.id)"
     display = 'standalone'
     display_override = @('fullscreen', 'standalone')   # 支持的浏览器用全屏（隐藏状态栏），否则退回独立窗口
+    # 接收别的应用分享来的文字（安卓等支持 Web Share Target 的平台），到 share.html 保存为笔记
+    share_target = [ordered]@{ action = '../share.html'; method = 'GET'; params = [ordered]@{ title = 'title'; text = 'text'; url = 'url' } }
     orientation = 'any'
     background_color = '#ffffff'
     theme_color = '#2563eb'

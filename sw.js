@@ -1,6 +1,6 @@
 // 只缓存外壳本身（同源）。被嵌入的跨域网站不经过这个 Service Worker，所以断网时只有外壳能打开。
-const CACHE = 'wr-v4';
-const SHELL = ['./', 'index.html', 'reader.html', 'books.json', 'manifest.webmanifest', 'icons/icon-192.png', 'icons/icon-512.png', 'icons/icon-180.png'];
+const CACHE = 'wr-v5';
+const SHELL = ['./', 'index.html', 'reader.html', 'notes.html', 'share.html', 'notes.js', 'notes.css', 'books.json', 'manifest.webmanifest', 'icons/icon-192.png', 'icons/icon-512.png', 'icons/icon-180.png'];
 
 self.addEventListener('install', (e) => {
   e.waitUntil(caches.open(CACHE).then((c) => c.addAll(SHELL)).then(() => self.skipWaiting()));

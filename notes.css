@@ -1,0 +1,49 @@
+/* 笔记相关样式（reader.html / notes.html / share.html 共用） */
+:root { --n-bg: #fff; --n-fg: #1f2328; --n-sub: #6b7280; --n-bd: #e5e7eb; --n-ac: #2563eb; --n-side: #fafafa; }
+@media (prefers-color-scheme: dark) { :root { --n-bg: #0f1115; --n-fg: #d7dae0; --n-sub: #8b93a1; --n-bd: #262b33; --n-ac: #6ea8ff; --n-side: #13161b; } }
+
+.nq { display: block; margin: 2px 0 6px; padding: 2px 10px; border-left: 4px solid var(--n-bd); color: var(--n-sub); white-space: pre-wrap; overflow-wrap: anywhere; }
+.todo { display: flex; gap: 6px; align-items: flex-start; cursor: pointer; }
+.todo input { margin-top: .5em; flex: none; }
+.todo span { white-space: pre-wrap; overflow-wrap: anywhere; min-width: 0; }
+.todo.done span { color: var(--n-sub); text-decoration: line-through; }
+
+/* 阅读页：右下角 ✎ 按钮 + 面板 */
+#nbtn { position: fixed; right: 12px; bottom: calc(56px + env(safe-area-inset-bottom, 0px)); z-index: 10; width: 36px; height: 36px; border: 0; border-radius: 50%; background: rgba(37, 99, 235, .75); color: #fff; font-size: 17px; line-height: 1; cursor: pointer; opacity: .55; }
+#nbtn:hover, #nbtn:focus-visible, #nbtn.has { opacity: 1; }
+#np { position: fixed; right: 12px; bottom: calc(100px + env(safe-area-inset-bottom, 0px)); z-index: 11; display: flex; flex-direction: column; width: min(360px, calc(100vw - 24px)); max-height: 70vh; background: var(--n-bg); color: var(--n-fg); border: 1px solid var(--n-bd); border-radius: 10px; box-shadow: 0 4px 18px rgba(0, 0, 0, .3); font-size: 14px; }
+#np[hidden] { display: none; }
+.nbar { display: flex; align-items: center; gap: 8px; padding: 6px 10px; border-bottom: 1px solid var(--n-bd); }
+.nbar b { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.nbar a { color: var(--n-ac); text-decoration: none; white-space: nowrap; }
+.nmine { max-height: 30vh; overflow: auto; padding: 4px 10px; border-bottom: 1px solid var(--n-bd); }
+.nmine[hidden] { display: none; }
+.nitem { padding: 6px 0; border-bottom: 1px dashed var(--n-bd); }
+.nitem:last-child { border-bottom: 0; }
+.nitem time { display: block; color: var(--n-sub); font-size: .8em; }
+.nquote { position: relative; margin: 6px 10px; padding-right: 24px; max-height: 20vh; overflow: auto; }
+.nquote[hidden] { display: none; }
+.nquote button { position: absolute; top: 0; right: 0; padding: 0 6px; border: 0; background: transparent; color: var(--n-sub); cursor: pointer; font-size: 1.1em; line-height: 1.4; }
+#np textarea, .note textarea, .nnew input, .ntools input[type=search], #sh textarea, #sh select { display: block; width: 100%; padding: 8px 10px; border: 0; background: var(--n-bg); color: var(--n-fg); font: inherit; font-size: 16px; line-height: 1.5; outline: none; }
+#np textarea { min-height: 90px; resize: vertical; }
+.nfoot { display: flex; gap: 6px; justify-content: flex-end; padding: 6px 10px; border-top: 1px solid var(--n-bd); }
+.btn { padding: 4px 12px; border: 1px solid var(--n-bd); border-radius: 6px; background: transparent; color: var(--n-fg); font: inherit; font-size: .9em; cursor: pointer; text-decoration: none; }
+.btn:hover { border-color: var(--n-ac); color: var(--n-ac); }
+.btn.pri { background: var(--n-ac); border-color: var(--n-ac); color: #fff; }
+
+/* 笔记页 */
+.ntools, .nnew { display: flex; gap: 8px; align-items: center; margin: 12px 0; }
+.nnew input, .ntools input[type=search] { flex: 1; min-width: 0; border: 1px solid var(--n-bd); border-radius: 6px; }
+.note { margin: 0 0 12px; border: 1px solid var(--n-bd); border-radius: 8px; overflow: hidden; }
+.nhead { display: flex; gap: 10px; align-items: center; padding: 6px 10px; border-bottom: 1px solid var(--n-bd); background: var(--n-side); }
+.nhead a, .nhead .plain { font-weight: 700; color: var(--n-ac); text-decoration: none; overflow-wrap: anywhere; }
+.nhead .plain { color: var(--n-sub); }
+.nhead time { flex: 1; color: var(--n-sub); font-size: .8em; }
+.nhead span.acts { display: flex; gap: 6px; }
+.note .nbody { padding: 8px 10px; line-height: 1.6; }
+.note textarea { min-height: 120px; resize: vertical; }
+
+/* 分享接收页 */
+#sh .card { border: 1px solid var(--n-bd); border-radius: 10px; overflow: hidden; }
+#sh label.f { display: block; padding: 8px 10px 0; color: var(--n-sub); font-size: .85em; }
+#sh textarea, #sh select { border-bottom: 1px solid var(--n-bd); }

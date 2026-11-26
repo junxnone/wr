@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>笔记</title>
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#2563eb">
+<link rel="apple-touch-icon" href="icons/icon-180.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<link rel="stylesheet" href="notes.css">
+<style>
+  * { box-sizing: border-box; }
+  body { margin: 0; padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left); background: var(--n-bg); color: var(--n-fg); font: 16px/1.6 -apple-system, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif; }
+  main { max-width: 760px; margin: 0 auto; padding: 20px 16px 48px; }
+  h1 { margin: 8px 0 4px; font-size: 1.6em; }
+  .top { display: flex; gap: 12px; align-items: baseline; }
+  .top a { color: var(--n-ac); text-decoration: none; }
+  .sub { margin: 0 0 8px; color: var(--n-sub); font-size: .9em; }
+</style>
+</head>
+<body>
+<main>
+  <div class="top"><a href="index.html">← 书架</a></div>
+  <h1>📝 笔记</h1>
+  <p class="sub">笔记只保存在当前浏览器（本机），点标题回到对应的书；建议定期导出备份。<span id="pst"></span></p>
+  <form class="nnew" id="new"><input id="newt" placeholder="新建待办（不关联书），回车添加…" autocomplete="off"><button class="btn pri" type="submit">添加</button></form>
+  <div class="ntools"><input id="q" type="search" placeholder="搜索笔记 / 书名…" autocomplete="off"><button class="btn" type="button" data-a="exp">导出</button><button class="btn" type="button" data-a="imp">导入</button><input type="file" accept=".json,application/json" hidden></div>
+  <div id="list"></div>
+</main>
+<script src="notes.js"></script>
+<script>
+(() => {
+  const { load, save, add, patch, remove, body, esc, when } = window.WRN;
+  const $ = (id) => document.getElementById(id);
+  const list = $('list'), q = $('q'), file = document.querySelector('input[type=file]');
+  let editId = null;
+
+  const draw = () => {
+    const kw = q.value.trim().toLowerCase();
+    const all = load().sort((a, b) => b.upd - a.upd);
+    const shown = all.filter((n) => !kw || `${n.text} ${n.quote || ''} ${n.title || ''}`.toLowerCase().includes(kw));
+    list.innerHTML = shown.map((n) => `<section class="note" data-id="${n.id}">
+<div class="nhead">${n.book ? `<a href="reader.html?id=${encodeURIComponent(n.book)}">${esc(n.title || n.book)}</a>` : '<span class="plain">独立待办</span>'}<time>${when(n.upd)}</time>
+<span class="acts"><button type="button" class="btn" data-a="edit">编辑</button><button type="button" class="btn" data-a="del">删除</button></span></div>
+${editId === n.id ? `<textarea>${esc(n.text)}</textarea><div class="nfoot"><button type="button" class="btn pri" data-a="ok">保存</button><button type="button" class="btn" data-a="cancel">取消</button></div>` : `<div class="nbody">${body(n)}</div>`}</section>`).join('')
+      || `<p class="sub">${all.length ? '没有匹配的笔记。' : '还没有笔记。在上面新建一条待办，或打开任意一本书，点右下角 ✎ 记一条。'}</p>`;
+  };
+
+  $('new').addEventListener('submit', (e) => {
+    e.preventDefault();
+    const t = $('newt').value.trim();
+    if (!t) return;
+    add({ text: t });
+    $('newt').value = '';
+    q.value = '';
+    draw();
+  });
+  list.addEventListener('change', (e) => {
+    const id = e.target.dataset.id;
+    if (id && patch(id, (n) => { n.done = e.target.checked; })) draw();
+  });
+  list.addEventListener('click', (e) => {
+    const a = e.target.dataset.a, sec = e.target.closest('.note');
+    if (!a || !sec) return;
+    const id = sec.dataset.id;
+    if (a === 'edit') { editId = id; draw(); list.querySelector('.note textarea')?.focus(); }
+    else if (a === 'cancel') { editId = null; draw(); }
+    else if (a === 'ok') {
+      const text = sec.querySelector('textarea').value.trim();
+      const n = load().find((x) => x.id === id);
+      // 有引用的笔记允许把自己写的文字清空；既没有引用又没有文字则不保存
+      if (n && (text || n.quote)) patch(id, (x) => { x.text = text; x.upd = Date.now(); });
+      editId = null;
+      draw();
+    } else if (a === 'del' && confirm('删除这条笔记？')) { remove(id); draw(); }
+  });
+  q.addEventListener('input', draw);
+
+  document.querySelector('.ntools').addEventListener('click', (e) => {
+    const a = e.target.dataset.a;
+    if (a === 'imp') file.click();
+    else if (a === 'exp') {
+      const all = load();
+      if (!all.length) return alert('还没有任何笔记');
+      const link = Object.assign(document.createElement('a'), {
+        href: URL.createObjectURL(new Blob([JSON.stringify(all, null, 2)], { type: 'application/json' })),
+        download: `wr-notes-${new Date().toISOString().slice(0, 10)}.json`,
+      });
+      link.click();
+      setTimeout(() => URL.revokeObjectURL(link.href), 1000);
+    }
+  });
+  file.addEventListener('change', async () => {
+    try {
+      const inc = JSON.parse(await file.files[0].text());
+      if (!Array.isArray(inc)) throw 0;
+      const all = load(), byId = new Map(all.map((n) => [n.id, n]));
+      let n = 0;
+      for (const x of inc) {
+        if (!x || typeof x.id !== 'string' || typeof x.text !== 'string') continue;
+        const old = byId.get(x.id);
+        if (!old) { all.push(x); n++; } else if ((x.upd || 0) > old.upd) { Object.assign(old, x); n++; }
+      }
+      save(all);
+      alert(`已导入 / 更新 ${n} 条笔记`);
+      draw();
+    } catch { alert('导入失败：不是有效的笔记 JSON'); }
+    file.value = '';
+  });
+
+  navigator.storage?.persisted?.().then((p) => { $('pst').textContent = p ? ' 持久存储：已启用。' : ' 持久存储：未启用（浏览器可能在空间紧张时清理）。'; }).catch(() => {});
+  if ('serviceWorker' in navigator) addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
+  draw();
+})();
+</script>
+</body>
+</html>

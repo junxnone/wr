@@ -23,12 +23,13 @@
 <meta name="theme-color" content="#2563eb">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
+<link rel="stylesheet" href="notes.css">
 <style>
   html, body { margin: 0; height: 100%; background: #fff; font: 14px/1.5 -apple-system, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif; }
   #view { position: fixed; left: 0; right: 0; bottom: 0; top: env(safe-area-inset-top, 0); width: 100%; height: calc(100% - env(safe-area-inset-top, 0px)); border: 0; background: #fff; }
   #fab { position: fixed; right: 12px; bottom: calc(12px + env(safe-area-inset-bottom, 0px)); z-index: 10; width: 36px; height: 36px; border: 0; border-radius: 50%; background: rgba(37, 99, 235, .75); color: #fff; font-size: 20px; line-height: 1; cursor: pointer; opacity: .55; }
   #fab:hover, #fab:focus-visible { opacity: 1; }
-  #menu { position: fixed; right: 12px; bottom: calc(56px + env(safe-area-inset-bottom, 0px)); z-index: 10; width: min(300px, calc(100vw - 24px)); padding: 10px; border: 1px solid #d1d5db; border-radius: 10px; background: #fff; color: #111; box-shadow: 0 4px 18px rgba(0, 0, 0, .25); }
+  #menu { position: fixed; right: 12px; bottom: calc(100px + env(safe-area-inset-bottom, 0px)); z-index: 10; width: min(300px, calc(100vw - 24px)); padding: 10px; border: 1px solid #d1d5db; border-radius: 10px; background: #fff; color: #111; box-shadow: 0 4px 18px rgba(0, 0, 0, .25); }
   #menu[hidden], #hint[hidden] { display: none; }
   #menu .title { margin: 0 0 8px; font-weight: 700; overflow-wrap: anywhere; }
   #menu .row { display: flex; gap: 6px; flex-wrap: wrap; }
@@ -40,10 +41,19 @@
 <iframe id="view" title="content" allow="fullscreen; clipboard-write" referrerpolicy="no-referrer-when-downgrade"></iframe>
 <div id="hint" hidden>如果一直空白，可能是该网站禁止被嵌入。点右下角 ⋯ →“在浏览器打开”。</div>
 <button id="fab" type="button" aria-label="菜单">⋯</button>
+<button id="nbtn" type="button" aria-label="笔记" title="记笔记">✎</button>
 <div id="menu" hidden>
   <p class="title" id="t"></p>
-  <div class="row"><a href="index.html">← 书架</a><a id="ext" href="#" target="_blank" rel="noopener">在浏览器打开 ↗</a><button id="reload" type="button" title="跨域页面无法原地刷新，只能回到这本书的首页">回到首页</button></div>
+  <div class="row"><a href="index.html">← 书架</a><a href="notes.html">📝 笔记</a><a id="ext" href="#" target="_blank" rel="noopener">在浏览器打开 ↗</a><button id="reload" type="button" title="跨域页面无法原地刷新，只能回到这本书的首页">回到首页</button></div>
 </div>
+<div id="np" hidden>
+  <div class="nbar"><b id="nt">笔记</b><a href="notes.html">全部笔记 →</a><button type="button" class="btn" data-a="x" title="关闭">×</button></div>
+  <div class="nmine" hidden></div>
+  <blockquote class="nq nquote" hidden><button type="button" data-a="noq" title="移除引用">×</button><span></span></blockquote>
+  <textarea placeholder="记一条待办…（Ctrl+Enter 保存）" spellcheck="false"></textarea>
+  <div class="nfoot"><button type="button" class="btn" data-a="paste" title="先在书里选中文字并复制（Ctrl+C），再点这里">粘贴为引用</button><button type="button" class="btn pri" data-a="save">保存</button></div>
+</div>
+<script src="notes.js"></script>
 <script>
 (() => {
   const $ = (id) => document.getElementById(id);
@@ -57,9 +67,47 @@
     clearTimeout(load.t);
     load.t = setTimeout(() => { hint.hidden = true; }, 7000);
   };
-  $('fab').addEventListener('click', () => { menu.hidden = !menu.hidden; });
+  const np = $('np');
+  $('fab').addEventListener('click', () => { menu.hidden = !menu.hidden; np.hidden = true; });
   $('reload').addEventListener('click', () => { menu.hidden = true; load(); });
   addEventListener('blur', () => { if (document.activeElement === view) menu.hidden = true; });
+
+  // ---- 笔记：每条是一个待办；引用来自剪贴板（跨域 iframe 里的选区读不到，所以要先复制）----
+  const WRN = window.WRN;
+  const ta = np.querySelector('textarea'), mine = np.querySelector('.nmine'), qbox = np.querySelector('.nquote');
+  let bookId = '', bookTitle = '', quote = '';
+  const setQuote = (t) => { quote = t.trim().slice(0, 1000); qbox.hidden = !quote; qbox.querySelector('span').textContent = quote; };
+  const refresh = () => {
+    const l = bookId ? WRN.load().filter((n) => n.book === bookId).sort((a, b) => b.upd - a.upd) : [];
+    $('nbtn').classList.toggle('has', l.length > 0);
+    mine.hidden = !l.length;
+    mine.innerHTML = l.map((n) => `<div class="nitem"><time>${WRN.when(n.upd)}</time>${WRN.body(n)}</div>`).join('');
+  };
+  const add = () => {
+    const text = ta.value.trim();
+    if (!text && !quote) return;
+    WRN.add({ book: bookId, title: bookTitle, quote, text });
+    ta.value = '';
+    setQuote('');
+    refresh();
+  };
+  $('nbtn').addEventListener('click', () => { np.hidden = !np.hidden; menu.hidden = true; });
+  np.addEventListener('click', (e) => {
+    const a = e.target.dataset.a;
+    if (a === 'x') np.hidden = true;
+    else if (a === 'noq') setQuote('');
+    else if (a === 'save') add();
+    else if (a === 'paste') {
+      (navigator.clipboard?.readText?.() ?? Promise.reject())
+        .then((t) => { if (t.trim()) setQuote(t); else alert('剪贴板是空的：先在书里选中文字并复制，再点这里'); })
+        .catch(() => { alert('无法读取剪贴板（可能被拒绝）。请在下面的输入框里长按粘贴。'); ta.focus(); });
+    }
+  });
+  np.addEventListener('change', (e) => {
+    const id = e.target.dataset.id;
+    if (id && WRN.patch(id, (n) => { n.done = e.target.checked; })) refresh();
+  });
+  ta.addEventListener('keydown', (e) => { if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) add(); });
   if ('serviceWorker' in navigator) addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
 
   fetch('books.json').then((r) => r.json()).catch(() => []).then((books) => {
@@ -69,7 +117,12 @@
     const title = book ? book.title : new URL(url).hostname;
     document.title = title;
     $('t').textContent = title;
+    $('nt').textContent = `笔记 · ${title}`;
     $('ext').href = url;
+    bookId = book ? book.id : '';
+    bookTitle = title;
+    if (bookId) try { localStorage.setItem('wr-last', bookId); } catch {}   // 分享进来的内容默认记到最近打开的这本书
+    refresh();
     load();
   });
 })();

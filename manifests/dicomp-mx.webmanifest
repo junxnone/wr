@@ -10,6 +10,15 @@
                              "fullscreen",
                              "standalone"
                          ],
+    "share_target":  {
+                         "action":  "../share.html",
+                         "method":  "GET",
+                         "params":  {
+                                        "title":  "title",
+                                        "text":  "text",
+                                        "url":  "url"
+                                    }
+                     },
     "orientation":  "any",
     "background_color":  "#ffffff",
     "theme_color":  "#2563eb",

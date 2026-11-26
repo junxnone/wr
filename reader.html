@@ -10,12 +10,17 @@
   const id = new URLSearchParams(location.search).get('id') || '';
   const l = document.createElement('link');
   l.rel = 'manifest';
-  l.href = /^[\w-]+$/.test(id) ? `manifests/${id}.webmanifest` : 'manifest.webmanifest';
+  const ok = /^[\w-]+$/.test(id);
+  l.href = ok ? `manifests/${id}.webmanifest` : 'manifest.webmanifest';
   document.head.append(l);
+  // iOS "添加到主屏幕" 用 apple-touch-icon，不读 manifest 里的图标
+  const a = document.createElement('link');
+  a.rel = 'apple-touch-icon';
+  a.href = ok ? `icons/${id}-180.png` : 'icons/icon-180.png';
+  document.head.append(a);
 })();
 </script>
 <meta name="theme-color" content="#2563eb">
-<link rel="apple-touch-icon" href="icons/icon-180.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <style>

@@ -11,6 +11,8 @@ $ids = $books | ForEach-Object { $_.id }
 Get-ChildItem $dir -Filter *.webmanifest | Where-Object { $ids -notcontains $_.BaseName } | Remove-Item
 foreach ($b in $books) {
   if ($b.id -notmatch '^[\w-]+$') { Write-Warning "跳过非法 id: $($b.id)"; continue }
+  # 优先用这本书自己的图标（make-icons.ps1 生成），没有就用通用图标
+  $prefix = if (Test-Path (Join-Path $root "icons/$($b.id)-192.png")) { $b.id } else { 'icon' }
   $m = [ordered]@{
     name = $b.title
     short_name = $b.title
@@ -25,10 +27,10 @@ foreach ($b in $books) {
     theme_color = '#2563eb'
     lang = 'zh-CN'
     icons = @(
-      [ordered]@{ src = '../icons/icon-192.png'; sizes = '192x192'; type = 'image/png'; purpose = 'any' },
-      [ordered]@{ src = '../icons/icon-512.png'; sizes = '512x512'; type = 'image/png'; purpose = 'any' },
-      [ordered]@{ src = '../icons/icon-192.png'; sizes = '192x192'; type = 'image/png'; purpose = 'maskable' },
-      [ordered]@{ src = '../icons/icon-512.png'; sizes = '512x512'; type = 'image/png'; purpose = 'maskable' }
+      [ordered]@{ src = "../icons/$prefix-192.png"; sizes = '192x192'; type = 'image/png'; purpose = 'any' },
+      [ordered]@{ src = "../icons/$prefix-512.png"; sizes = '512x512'; type = 'image/png'; purpose = 'any' },
+      [ordered]@{ src = "../icons/$prefix-192.png"; sizes = '192x192'; type = 'image/png'; purpose = 'maskable' },
+      [ordered]@{ src = "../icons/$prefix-512.png"; sizes = '512x512'; type = 'image/png'; purpose = 'maskable' }
     )
   }
   $json = $m | ConvertTo-Json -Depth 5

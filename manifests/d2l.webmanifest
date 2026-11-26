@@ -1,0 +1,43 @@
+{
+    "name":  "动手学深度学习",
+    "short_name":  "动手学深度学习",
+    "description":  "d2l.ai 中文版：深度学习的交互式教材",
+    "start_url":  "../reader.html?id=d2l",
+    "scope":  "../",
+    "id":  "../reader.html?id=d2l",
+    "display":  "standalone",
+    "display_override":  [
+                             "fullscreen",
+                             "standalone"
+                         ],
+    "orientation":  "any",
+    "background_color":  "#ffffff",
+    "theme_color":  "#2563eb",
+    "lang":  "zh-CN",
+    "icons":  [
+                  {
+                      "src":  "../icons/d2l-192.png",
+                      "sizes":  "192x192",
+                      "type":  "image/png",
+                      "purpose":  "any"
+                  },
+                  {
+                      "src":  "../icons/d2l-512.png",
+                      "sizes":  "512x512",
+                      "type":  "image/png",
+                      "purpose":  "any"
+                  },
+                  {
+                      "src":  "../icons/d2l-192.png",
+                      "sizes":  "192x192",
+                      "type":  "image/png",
+                      "purpose":  "maskable"
+                  },
+                  {
+                      "src":  "../icons/d2l-512.png",
+                      "sizes":  "512x512",
+                      "type":  "image/png",
+                      "purpose":  "maskable"
+                  }
+              ]
+}

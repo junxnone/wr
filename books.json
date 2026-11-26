@@ -2,5 +2,8 @@
   { "id": "hello-algo", "title": "Hello 算法", "desc": "动画图解、一键运行的数据结构与算法入门教程", "url": "https://www.hello-algo.com/", "icon": "算法", "color": "#2563eb" },
   { "id": "dicomp-mx", "title": "毛选", "desc": "毛泽东选集在线阅读", "url": "https://more.dicomp.net/mx/#/", "icon": "毛选", "color": "#dc2626" },
   { "id": "joyful-pandas", "title": "Joyful Pandas", "desc": "Datawhale：Pandas 学习与练习（Content）", "url": "https://inter.joyfulpandas.datawhale.club/Content/index.html", "icon": "Pandas", "color": "#16a34a" },
-  { "id": "csdiy", "title": "CS 自学指南", "desc": "csdiy.wiki：计算机科学自学课程汇总", "url": "https://csdiy.wiki/", "icon": "CS", "color": "#7c3aed" }
+  { "id": "csdiy", "title": "CS 自学指南", "desc": "csdiy.wiki：计算机科学自学课程汇总", "url": "https://csdiy.wiki/", "icon": "CS", "color": "#7c3aed" },
+  { "id": "v2fly", "title": "V2Fly", "desc": "V2Fly 项目文档", "url": "https://www.v2fly.org/", "icon": "V2fly", "color": "#ea580c" },
+  { "id": "d2l", "title": "动手学深度学习", "desc": "d2l.ai 中文版：深度学习的交互式教材", "url": "https://zh.d2l.ai/", "icon": "D2L", "color": "#0891b2" },
+  { "id": "fppcn", "title": "预测：方法与实践", "desc": "Forecasting: Principles and Practice 中文版：时间序列预测教材", "url": "https://otexts.com/fppcn/preface.html", "icon": "预测", "color": "#be185d" }
 ]

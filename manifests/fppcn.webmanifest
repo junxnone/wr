@@ -1,0 +1,43 @@
+{
+    "name":  "预测：方法与实践",
+    "short_name":  "预测：方法与实践",
+    "description":  "Forecasting: Principles and Practice 中文版：时间序列预测教材",
+    "start_url":  "../reader.html?id=fppcn",
+    "scope":  "../",
+    "id":  "../reader.html?id=fppcn",
+    "display":  "standalone",
+    "display_override":  [
+                             "fullscreen",
+                             "standalone"
+                         ],
+    "orientation":  "any",
+    "background_color":  "#ffffff",
+    "theme_color":  "#2563eb",
+    "lang":  "zh-CN",
+    "icons":  [
+                  {
+                      "src":  "../icons/fppcn-192.png",
+                      "sizes":  "192x192",
+                      "type":  "image/png",
+                      "purpose":  "any"
+                  },
+                  {
+                      "src":  "../icons/fppcn-512.png",
+                      "sizes":  "512x512",
+                      "type":  "image/png",
+                      "purpose":  "any"
+                  },
+                  {
+                      "src":  "../icons/fppcn-192.png",
+                      "sizes":  "192x192",
+                      "type":  "image/png",
+                      "purpose":  "maskable"
+                  },
+                  {
+                      "src":  "../icons/fppcn-512.png",
+                      "sizes":  "512x512",
+                      "type":  "image/png",
+                      "purpose":  "maskable"
+                  }
+              ]
+}

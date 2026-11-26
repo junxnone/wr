@@ -27,10 +27,14 @@
   const remove = (id) => save(load().filter((x) => x.id !== id));
   // 一条笔记的 HTML：引用（> 样式）在上，自己写的文字在下；整条是一个复选框
   const body = (n) => `<label class="todo${n.done ? ' done' : ''}"><input type="checkbox" data-id="${n.id}"${n.done ? ' checked' : ''}><span>${n.quote ? `<blockquote class="nq">${esc(n.quote)}</blockquote>` : ''}${esc(n.text)}</span></label>`;
+  // 笔记归属的书（n.book）：书架上的书用 id；自定义网址用 "url:" + 去掉 # 的网址（见 recent.js 的 keyOf）；空 = 独立待办
+  const bookHref = (book) => !book ? '' : book.startsWith('url:')
+    ? `reader.html?url=${encodeURIComponent(book.slice(4))}`
+    : `reader.html?id=${encodeURIComponent(book)}`;
   const books = () => fetch('books.json').then((r) => r.json()).catch(() => []);
 
   // 请浏览器别自动清理本站数据（不保证授予；防不了手动清除，仍建议定期导出）
   try { navigator.storage?.persist?.(); } catch {}
 
-  window.WRN = { KEY, load, save, add, patch, remove, body, esc, when, books };
+  window.WRN = { KEY, load, save, add, patch, remove, body, bookHref, esc, when, books };
 })();

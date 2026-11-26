@@ -58,20 +58,39 @@
   <div class="books" id="books"></div>
 </main>
 <script src="recent.js"></script>
+<script src="books.js"></script>
 <script>
 (() => {
   const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
   // 某本书配置有误（网址不合法）只跳过那一本，不影响其他书
   const card = (b) => {
     let host;
-    try { host = new URL(b.url).host; } catch { console.warn('书架配置有误，已跳过：', b); return ''; }
-    return `<div class="book"><a class="open" href="reader.html?id=${encodeURIComponent(b.id)}"><b>${esc(b.title)}</b><span>${esc(b.desc || '')}</span><em>${esc(host)}</em></a><a class="ext" href="${esc(b.url)}" target="_blank" rel="noopener" title="在浏览器新标签页打开">↗</a></div>`;
+    let origin;
+    try { ({ host, origin } = new URL(b.url)); } catch { console.warn('书架配置有误，已跳过：', b); return ''; }
+    return `<div class="book" data-o="${esc(origin)}"><a class="open" href="reader.html?id=${encodeURIComponent(b.id)}"><b>${esc(b.title)}</b><span>${esc(b.desc || '')}</span><em>${esc(host)}</em></a><a class="ext" href="${esc(b.url)}" target="_blank" rel="noopener" title="在浏览器新标签页打开">↗</a></div>`;
   };
-  let shelf = [];
-  fetch('books.json').then((r) => r.json()).then((books) => {
+  // 书单先用本机副本立刻显示，再用网络上的最新书单更新（内容没变就不重画）
+  let shelf = [], drawn = '';
+  const drawShelf = (books) => {
     shelf = books;
-    document.getElementById('books').innerHTML = books.map(card).join('');
-  }).catch(() => { document.getElementById('books').textContent = '书单加载失败'; });
+    const html = books.map(card).join('');
+    if (html !== drawn) document.getElementById('books').innerHTML = drawn = html;
+  };
+  const local = window.WRB.cached();
+  if (local) drawShelf(local);
+  window.WRB.refresh().then(drawShelf).catch(() => { if (!local) document.getElementById('books').textContent = '书单加载失败'; });
+
+  // 鼠标移到 / 手指按到卡片上时，提前和书的网站建立连接，点开更快
+  const warmed = new Set();
+  const warm = (e) => {
+    const b = e.target.closest?.('.book[data-o]');
+    const o = b && b.dataset.o;
+    if (!o || warmed.has(o)) return;
+    warmed.add(o);
+    document.head.append(Object.assign(document.createElement('link'), { rel: 'preconnect', href: o }));
+  };
+  document.addEventListener('pointerover', warm);
+  document.addEventListener('focusin', warm);
 
   // ---- 打开自定义地址 + 最近阅读 ----
   const R = window.WRR;
@@ -89,9 +108,9 @@
     const l = R.load();
     $('recent').hidden = !l.length;
     $('rc').innerHTML = l.map((e) => {
-      let host = '';
-      try { host = new URL(e.url).host; } catch {}
-      return `<div class="book rc" data-k="${esc(e.key)}"><a class="open" href="${esc(readerHref(e))}"><b>${esc(e.title)}</b><span>${esc(ago(e.ts))}</span><em>${esc(host)}</em></a><div class="tools"><button type="button" data-a="ren" title="改名">✎</button><button type="button" data-a="del" title="从最近阅读移除">×</button></div></div>`;
+      let host = '', origin = '';
+      try { ({ host, origin } = new URL(e.url)); } catch {}
+      return `<div class="book rc" data-k="${esc(e.key)}" data-o="${esc(origin)}"><a class="open" href="${esc(readerHref(e))}"><b>${esc(e.title)}</b><span>${esc(ago(e.ts))}</span><em>${esc(host)}</em></a><div class="tools"><button type="button" data-a="ren" title="改名">✎</button><button type="button" data-a="del" title="从最近阅读移除">×</button></div></div>`;
     }).join('');
   };
   $('rc').addEventListener('click', (ev) => {

@@ -47,3 +47,15 @@
 #sh .card { border: 1px solid var(--n-bd); border-radius: 10px; overflow: hidden; }
 #sh label.f { display: block; padding: 8px 10px 0; color: var(--n-sub); font-size: .85em; }
 #sh textarea, #sh select { border-bottom: 1px solid var(--n-bd); }
+
+/* 笔记页：按书筛选 */
+.nchips { display: flex; gap: 6px; flex-wrap: wrap; margin: 0 0 12px; }
+.nchips[hidden] { display: none; }
+.nchips button { padding: 2px 10px; border: 1px solid var(--n-bd); border-radius: 14px; background: transparent; color: var(--n-fg); font: inherit; font-size: .85em; cursor: pointer; }
+.nchips button:hover { border-color: var(--n-ac); color: var(--n-ac); }
+.nchips button.on { background: var(--n-ac); border-color: var(--n-ac); color: #fff; }
+
+/* 笔记页：删除后的"撤销" */
+#undo { position: fixed; left: 50%; bottom: calc(16px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); z-index: 20; display: flex; gap: 12px; align-items: center; padding: 8px 14px; border-radius: 10px; background: rgba(17, 24, 39, .92); color: #fff; font-size: 14px; box-shadow: 0 4px 18px rgba(0, 0, 0, .35); }
+#undo[hidden] { display: none; }
+#undo .btn { border-color: rgba(255, 255, 255, .5); color: #fff; }

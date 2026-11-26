@@ -32,6 +32,8 @@
   <p class="done" id="done" hidden></p>
 </main>
 <script src="notes.js"></script>
+<script src="recent.js"></script>
+<script src="books.js"></script>
 <script>
 // Web Share Target 接收页：别的应用把选中的文字分享给本应用时到这里（manifest 里的 share_target）
 (() => {
@@ -42,19 +44,29 @@
   $('quote').value = text || url || title;
   if (text && url && !text.includes(url)) $('text').value = url;
 
-  let books = [];
-  window.WRN.books().then((bs) => {
-    books = bs;
-    $('book').innerHTML += bs.map((b) => `<option value="${window.WRN.esc(b.id)}">${window.WRN.esc(b.title)}</option>`).join('');
+  // 可选的书：书架上的书 + 最近阅读里的自定义网址（值和阅读页记笔记时用的一致，见 notes.js 的 bookHref）
+  const esc = window.WRN.esc, sel = $('book');
+  const opts = new Map();
+  let touched = false;
+  sel.addEventListener('change', () => { touched = true; });
+  const fill = (bs) => {
+    opts.clear();
+    bs.forEach((b) => opts.set(b.id, b.title));
+    window.WRR.load().filter((e) => !e.id).forEach((e) => opts.set('url:' + e.key, e.title));
+    const keep = sel.value;
+    sel.innerHTML = '<option value="">不关联书（独立待办）</option>' + [...opts].map(([v, t]) => `<option value="${esc(v)}">${esc(t)}</option>`).join('');
     let last = ''; try { last = localStorage.getItem('wr-last') || ''; } catch {}
-    if (bs.some((b) => b.id === last)) $('book').value = last;
-  });
+    // 默认选最近打开的那本；用户自己选过就保留他的选择
+    sel.value = touched ? (opts.has(keep) ? keep : '') : (opts.has(last) ? last : '');
+  };
+  fill(window.WRB.cached() || []);
+  window.WRB.refresh().then(fill).catch(() => {});
 
   $('save').addEventListener('click', () => {
     const quote = $('quote').value.trim(), t = $('text').value.trim();
     if (!quote && !t) return alert('没有可保存的内容');
-    const id = $('book').value, b = books.find((x) => x.id === id);
-    window.WRN.add({ book: id, title: b ? b.title : '', quote, text: t });
+    const id = sel.value;
+    window.WRN.add({ book: id, title: opts.get(id) || '', quote, text: t });
     $('card').hidden = true; $('save').hidden = true;
     const d = $('done');
     d.hidden = false;

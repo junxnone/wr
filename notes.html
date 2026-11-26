@@ -27,22 +27,50 @@
   <p class="sub">笔记只保存在当前浏览器（本机），点标题回到对应的书；建议定期导出备份。<span id="pst"></span></p>
   <form class="nnew" id="new"><input id="newt" placeholder="新建待办（不关联书），回车添加…" autocomplete="off"><button class="btn pri" type="submit">添加</button></form>
   <div class="ntools"><input id="q" type="search" placeholder="搜索笔记 / 书名…" autocomplete="off"><button class="btn" type="button" data-a="exp">导出</button><button class="btn" type="button" data-a="imp">导入</button><input type="file" accept=".json,application/json" hidden></div>
+  <div class="nchips" id="chips"></div>
   <div id="list"></div>
 </main>
+<div id="undo" hidden><span>已删除 1 条笔记</span><button type="button" class="btn">撤销</button></div>
 <script src="notes.js"></script>
 <script>
 (() => {
-  const { load, save, add, patch, remove, body, esc, when } = window.WRN;
+  const { load, save, add, patch, remove, body, bookHref, esc, when } = window.WRN;
   const $ = (id) => document.getElementById(id);
-  const list = $('list'), q = $('q'), file = document.querySelector('input[type=file]');
+  const list = $('list'), q = $('q'), chips = $('chips'), file = document.querySelector('input[type=file]');
   let editId = null;
+
+  // 按书筛选：地址里的 #book=<key>（空 = 独立待办；没有 #book = 全部），阅读页的"本书笔记"链接会带上它
+  const readFilter = () => { const m = location.hash.match(/^#book=(.*)$/); return m ? decodeURIComponent(m[1]) : null; };
+  let f = readFilter();
+  const setFilter = (v) => {
+    f = v;
+    history.replaceState(null, '', v === null ? location.pathname + location.search : '#book=' + encodeURIComponent(v));
+    draw();
+  };
+  addEventListener('hashchange', () => { f = readFilter(); draw(); });
+  chips.addEventListener('click', (e) => {
+    const b = e.target.closest('button[data-k]');
+    if (b) setFilter(b.dataset.k === '*' ? null : b.dataset.k);
+  });
 
   const draw = () => {
     const kw = q.value.trim().toLowerCase();
     const all = load().sort((a, b) => b.upd - a.upd);
-    const shown = all.filter((n) => !kw || `${n.text} ${n.quote || ''} ${n.title || ''}`.toLowerCase().includes(kw));
+    // 筛选条：每本有笔记的书一个（标题取它最新一条笔记里记的书名）
+    const groups = new Map();
+    for (const n of all) {
+      const k = n.book || '';
+      if (!groups.has(k)) groups.set(k, { title: k ? (n.title || k) : '独立待办', n: 0 });
+      groups.get(k).n++;
+    }
+    if (f !== null && !groups.has(f)) f = null;   // 这本书的笔记都删光了
+    chips.hidden = groups.size < 2;
+    chips.innerHTML = `<button type="button" data-k="*" class="${f === null ? 'on' : ''}">全部 ${all.length}</button>`
+      + [...groups].map(([k, g]) => `<button type="button" data-k="${esc(k)}" class="${f === k ? 'on' : ''}">${esc(g.title)} ${g.n}</button>`).join('');
+    const shown = all.filter((n) => (f === null || (n.book || '') === f)
+      && (!kw || `${n.text} ${n.quote || ''} ${n.title || ''}`.toLowerCase().includes(kw)));
     list.innerHTML = shown.map((n) => `<section class="note" data-id="${n.id}">
-<div class="nhead">${n.book ? `<a href="reader.html?id=${encodeURIComponent(n.book)}">${esc(n.title || n.book)}</a>` : '<span class="plain">独立待办</span>'}<time>${when(n.upd)}</time>
+<div class="nhead">${n.book ? `<a href="${esc(bookHref(n.book))}">${esc(n.title || n.book)}</a>` : '<span class="plain">独立待办</span>'}<time>${when(n.upd)}</time>
 <span class="acts"><button type="button" class="btn" data-a="edit">编辑</button><button type="button" class="btn" data-a="del">删除</button></span></div>
 ${editId === n.id ? `<textarea>${esc(n.text)}</textarea><div class="nfoot"><button type="button" class="btn pri" data-a="ok">保存</button><button type="button" class="btn" data-a="cancel">取消</button></div>` : `<div class="nbody">${body(n)}</div>`}</section>`).join('')
       || `<p class="sub">${all.length ? '没有匹配的笔记。' : '还没有笔记。在上面新建一条待办，或打开任意一本书，点右下角 ✎ 记一条。'}</p>`;
@@ -55,7 +83,8 @@ ${editId === n.id ? `<textarea>${esc(n.text)}</textarea><div class="nfoot"><butt
     add({ text: t });
     $('newt').value = '';
     q.value = '';
-    draw();
+    // 新建的是独立待办：如果正在看某本书的笔记，切到"全部"，否则看不到刚加的这条
+    if (f !== null && f !== '') setFilter(null); else draw();
   });
   list.addEventListener('change', (e) => {
     const id = e.target.dataset.id;
@@ -74,7 +103,29 @@ ${editId === n.id ? `<textarea>${esc(n.text)}</textarea><div class="nfoot"><butt
       if (n && (text || n.quote)) patch(id, (x) => { x.text = text; x.upd = Date.now(); });
       editId = null;
       draw();
-    } else if (a === 'del' && confirm('删除这条笔记？')) { remove(id); draw(); }
+    } else if (a === 'del') {
+      // 不弹确认框：直接删，底部给 6 秒"撤销"
+      const n = load().find((x) => x.id === id);
+      if (!n || !remove(id)) return;
+      if (editId === id) editId = null;
+      draw();
+      showUndo(n);
+    }
+  });
+
+  const undo = $('undo');
+  let undone = null;
+  const showUndo = (n) => {
+    undone = n;
+    undo.hidden = false;
+    clearTimeout(showUndo.t);
+    showUndo.t = setTimeout(() => { undo.hidden = true; undone = null; }, 6000);
+  };
+  undo.querySelector('button').addEventListener('click', () => {
+    if (undone && !load().some((x) => x.id === undone.id)) save(load().concat(undone));
+    undone = null;
+    undo.hidden = true;
+    draw();
   });
   q.addEventListener('input', draw);
 

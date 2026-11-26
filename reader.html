@@ -25,29 +25,35 @@
 <meta name="mobile-web-app-capable" content="yes">
 <link rel="stylesheet" href="notes.css">
 <style>
-  html, body { margin: 0; height: 100%; background: #fff; font: 14px/1.5 -apple-system, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif; }
+  html, body { margin: 0; height: 100%; background: var(--n-bg); font: 14px/1.5 -apple-system, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif; }
+  /* 书本身多数按白底设计：iframe 保持白底，避免没设背景色的页面在深色外壳上看不清 */
   #view { position: fixed; left: 0; right: 0; bottom: 0; top: env(safe-area-inset-top, 0); width: 100%; height: calc(100% - env(safe-area-inset-top, 0px)); border: 0; background: #fff; }
-  #fab { position: fixed; right: 12px; bottom: calc(12px + env(safe-area-inset-bottom, 0px)); z-index: 10; width: 36px; height: 36px; border: 0; border-radius: 50%; background: rgba(37, 99, 235, .75); color: #fff; font-size: 20px; line-height: 1; cursor: pointer; opacity: .55; }
-  #fab:hover, #fab:focus-visible { opacity: 1; }
-  #menu { position: fixed; right: 12px; bottom: calc(100px + env(safe-area-inset-bottom, 0px)); z-index: 10; width: min(300px, calc(100vw - 24px)); padding: 10px; border: 1px solid #d1d5db; border-radius: 10px; background: #fff; color: #111; box-shadow: 0 4px 18px rgba(0, 0, 0, .25); }
+  /* 唯一的悬浮按钮：点开菜单；按住拖动可以换位置（避开书自己右下角的按钮） */
+  #fab { position: fixed; right: 12px; bottom: calc(12px + env(safe-area-inset-bottom, 0px)); z-index: 12; width: 40px; height: 40px; padding: 0; border: 0; border-radius: 50%; background: rgba(37, 99, 235, .8); color: #fff; font-size: 20px; line-height: 1; cursor: grab; opacity: .6; touch-action: none; user-select: none; -webkit-user-select: none; }
+  #fab:hover, #fab:focus-visible, #fab.on, #fab.dragging { opacity: 1; }
+  #fab.dragging { cursor: grabbing; }
+  #fab .dot { position: absolute; top: 2px; right: 2px; width: 10px; height: 10px; border: 2px solid #fff; border-radius: 50%; background: #f59e0b; }
+  #fab .dot[hidden] { display: none; }
+  #menu { position: fixed; z-index: 11; width: min(300px, calc(100vw - 24px)); overflow: auto; padding: 10px; border: 1px solid var(--n-bd); border-radius: 10px; background: var(--n-bg); color: var(--n-fg); box-shadow: 0 4px 18px rgba(0, 0, 0, .3); }
   #menu[hidden], #hint[hidden] { display: none; }
   #menu .title { margin: 0 0 8px; font-weight: 700; overflow-wrap: anywhere; }
   #menu .row { display: flex; gap: 6px; flex-wrap: wrap; }
-  #menu button, #menu a { padding: 6px 10px; border: 1px solid #d1d5db; border-radius: 6px; background: #fff; color: #111; font: inherit; text-decoration: none; cursor: pointer; }
-  #hint { position: fixed; left: 12px; right: 60px; bottom: calc(12px + env(safe-area-inset-bottom, 0px)); z-index: 9; padding: 8px 12px; border-radius: 8px; background: rgba(17, 24, 39, .85); color: #fff; font-size: 13px; }
+  #menu button, #menu a { padding: 6px 10px; border: 1px solid var(--n-bd); border-radius: 6px; background: transparent; color: var(--n-fg); font: inherit; text-decoration: none; cursor: pointer; }
+  #menu button:hover, #menu a:hover { border-color: var(--n-ac); color: var(--n-ac); }
+  #np { overflow: hidden; }
+  #hint { position: fixed; left: 12px; right: 12px; bottom: calc(12px + env(safe-area-inset-bottom, 0px)); z-index: 9; max-width: 520px; margin: 0 auto; padding: 8px 12px; border-radius: 8px; background: rgba(17, 24, 39, .88); color: #fff; font-size: 13px; }
 </style>
 </head>
 <body>
 <iframe id="view" title="content" allow="fullscreen; clipboard-write" referrerpolicy="no-referrer-when-downgrade"></iframe>
-<div id="hint" hidden>如果一直空白，可能是该网站禁止被嵌入。点右下角 ⋯ →“在浏览器打开”。</div>
-<button id="fab" type="button" aria-label="菜单">⋯</button>
-<button id="nbtn" type="button" aria-label="笔记" title="记笔记">✎</button>
+<div id="hint" hidden>如果一直空白，可能是该网站禁止被嵌入。点 ⋯ →“在浏览器打开”。</div>
+<button id="fab" type="button" aria-label="菜单（按住可拖动）" title="菜单（按住可拖动）">⋯<span class="dot" hidden></span></button>
 <div id="menu" hidden>
   <p class="title" id="t"></p>
-  <div class="row"><a href="index.html">← 书架</a><a href="notes.html">📝 笔记</a><a id="ext" href="#" target="_blank" rel="noopener">在浏览器打开 ↗</a><button id="reload" type="button" title="跨域页面无法原地刷新，只能回到这本书的首页">回到首页</button><button type="button" data-install hidden>📲 将该书添加到桌面</button></div>
+  <div class="row"><a href="index.html">← 书架</a><button id="opennotes" type="button">✎ 记笔记</button><a id="allnotes" href="notes.html">📝 本书笔记</a><a id="ext" href="#" target="_blank" rel="noopener">在浏览器打开 ↗</a><button id="reload" type="button" title="跨域页面无法原地刷新，只能回到这本书的首页">回到首页</button><button type="button" data-install hidden>📲 将该书添加到桌面</button></div>
 </div>
 <div id="np" hidden>
-  <div class="nbar"><b id="nt">笔记</b><a href="notes.html">全部笔记 →</a><button type="button" class="btn" data-a="x" title="关闭">×</button></div>
+  <div class="nbar"><b id="nt">笔记</b><a id="npall" href="notes.html">全部笔记 →</a><button type="button" class="btn" data-a="x" title="关闭">×</button></div>
   <div class="nmine" hidden></div>
   <blockquote class="nq nquote" hidden><button type="button" data-a="noq" title="移除引用">×</button><span></span></blockquote>
   <textarea placeholder="记一条待办…（Ctrl+Enter 保存）" spellcheck="false"></textarea>
@@ -55,32 +61,120 @@
 </div>
 <script src="notes.js"></script>
 <script src="recent.js"></script>
+<script src="books.js"></script>
 <script>
 (() => {
   const $ = (id) => document.getElementById(id);
-  const view = $('view'), menu = $('menu'), hint = $('hint');
+  const view = $('view'), menu = $('menu'), hint = $('hint'), np = $('np'), fab = $('fab');
+  const WRN = window.WRN, WRR = window.WRR, WRB = window.WRB;
   const norm = (s) => { try { const u = new URL(s); return /^https?:$/.test(u.protocol) ? u.href : ''; } catch { return ''; } };
   const q = new URLSearchParams(location.search);
-  let url = '';
-  const load = () => {
-    view.src = url;
-    hint.hidden = false;
-    clearTimeout(load.t);
-    load.t = setTimeout(() => { hint.hidden = true; }, 7000);
+  let url = '', bookId = '', bookTitle = '';
+
+  // ---- 悬浮按钮：可拖动，位置（占屏幕宽高的比例）记在本机；菜单和笔记面板出现在按钮旁边 ----
+  const POS = 'wr-fab';
+  const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
+  const setPos = (x, y) => {
+    Object.assign(fab.style, {
+      left: clamp(x, 4, innerWidth - fab.offsetWidth - 4) + 'px',
+      top: clamp(y, 4, innerHeight - fab.offsetHeight - 4) + 'px',
+      right: 'auto', bottom: 'auto',
+    });
   };
-  const np = $('np');
-  $('fab').addEventListener('click', () => { menu.hidden = !menu.hidden; np.hidden = true; });
-  $('reload').addEventListener('click', () => { menu.hidden = true; load(); });
-  addEventListener('blur', () => { if (document.activeElement === view) menu.hidden = true; });
+  const restorePos = () => { try { const p = JSON.parse(localStorage.getItem(POS)); if (p) setPos(p.x * innerWidth, p.y * innerHeight); } catch {} };
+  // 面板放在按钮所在的那一侧：按钮在右半边就右对齐，在下半边就往上弹
+  const place = (el) => {
+    const r = fab.getBoundingClientRect(), gap = 8;
+    Object.assign(el.style, { left: 'auto', right: 'auto', top: 'auto', bottom: 'auto' });
+    if (r.left + r.width / 2 > innerWidth / 2) el.style.right = Math.max(8, innerWidth - r.right) + 'px';
+    else el.style.left = Math.max(8, r.left) + 'px';
+    if (r.top + r.height / 2 < innerHeight / 2) {
+      el.style.top = r.bottom + gap + 'px';
+      el.style.maxHeight = innerHeight - r.bottom - gap - 8 + 'px';
+    } else {
+      el.style.bottom = innerHeight - r.top + gap + 'px';
+      el.style.maxHeight = r.top - gap - 8 + 'px';
+    }
+  };
+  const closeAll = () => { menu.hidden = true; np.hidden = true; fab.classList.remove('on'); };
+  const show = (el) => {
+    const was = !el.hidden;
+    closeAll();
+    if (was) return;
+    el.hidden = false;
+    place(el);
+    fab.classList.add('on');
+  };
+  restorePos();
+  addEventListener('resize', () => {
+    restorePos();
+    if (!menu.hidden) place(menu);
+    if (!np.hidden) place(np);
+  });
+
+  let drag = null, moved = false;
+  fab.addEventListener('pointerdown', (e) => {
+    if (e.button) return;
+    const r = fab.getBoundingClientRect();
+    drag = { dx: e.clientX - r.left, dy: e.clientY - r.top, x0: e.clientX, y0: e.clientY };
+    moved = false;
+    fab.setPointerCapture(e.pointerId);
+  });
+  fab.addEventListener('pointermove', (e) => {
+    if (!drag) return;
+    if (!moved && Math.hypot(e.clientX - drag.x0, e.clientY - drag.y0) < 6) return; // 小于 6px 当作点击
+    if (!moved) { moved = true; fab.classList.add('dragging'); closeAll(); }
+    setPos(e.clientX - drag.dx, e.clientY - drag.dy);
+  });
+  const endDrag = () => {
+    if (!drag) return;
+    drag = null;
+    fab.classList.remove('dragging');
+    if (moved) {
+      const r = fab.getBoundingClientRect();
+      try { localStorage.setItem(POS, JSON.stringify({ x: r.left / innerWidth, y: r.top / innerHeight })); } catch {}
+    }
+  };
+  fab.addEventListener('pointerup', endDrag);
+  fab.addEventListener('pointercancel', endDrag);
+  fab.addEventListener('click', () => { if (moved) { moved = false; return; } show(menu); });   // 拖动结束时的 click 不算点开
+
+  $('opennotes').addEventListener('click', () => show(np));
+  $('reload').addEventListener('click', () => { closeAll(); load(); });
+  // 点进书里（焦点移到 iframe）时收起菜单；笔记面板保留，方便在书里复制后回来粘贴
+  addEventListener('blur', () => { if (document.activeElement === view) { menu.hidden = true; if (np.hidden) fab.classList.remove('on'); } });
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeAll(); });
+
+  // ---- 加载书：只在第一次打开这本书时提示一次；之后只有加载超过 8 秒还没完成才提示 ----
+  const HINTED = 'wr-hinted';
+  let loaded = false;
+  view.addEventListener('load', () => { loaded = true; if (hint.dataset.slow) { hint.hidden = true; delete hint.dataset.slow; } });
+  const showHint = (slow) => {
+    hint.hidden = false;
+    clearTimeout(showHint.t);
+    if (slow) hint.dataset.slow = '1';
+    else showHint.t = setTimeout(() => { hint.hidden = true; }, 6000);
+  };
+  const load = () => {
+    loaded = false;
+    hint.hidden = true;
+    clearTimeout(load.t);
+    view.src = url;
+    let seen = [];
+    try { seen = JSON.parse(localStorage.getItem(HINTED)) || []; } catch {}
+    if (!seen.includes(bookId)) {
+      showHint(false);
+      try { localStorage.setItem(HINTED, JSON.stringify(seen.concat(bookId).slice(-100))); } catch {}
+    } else load.t = setTimeout(() => { if (!loaded) showHint(true); }, 8000);
+  };
 
   // ---- 笔记：每条是一个待办；引用来自剪贴板（跨域 iframe 里的选区读不到，所以要先复制）----
-  const WRN = window.WRN;
   const ta = np.querySelector('textarea'), mine = np.querySelector('.nmine'), qbox = np.querySelector('.nquote');
-  let bookId = '', bookTitle = '', quote = '';
+  let quote = '';
   const setQuote = (t) => { quote = t.trim().slice(0, 1000); qbox.hidden = !quote; qbox.querySelector('span').textContent = quote; };
   const refresh = () => {
     const l = bookId ? WRN.load().filter((n) => n.book === bookId).sort((a, b) => b.upd - a.upd) : [];
-    $('nbtn').classList.toggle('has', l.length > 0);
+    fab.querySelector('.dot').hidden = !l.length;
     mine.hidden = !l.length;
     mine.innerHTML = l.map((n) => `<div class="nitem"><time>${WRN.when(n.upd)}</time>${WRN.body(n)}</div>`).join('');
   };
@@ -92,10 +186,9 @@
     setQuote('');
     refresh();
   };
-  $('nbtn').addEventListener('click', () => { np.hidden = !np.hidden; menu.hidden = true; });
   np.addEventListener('click', (e) => {
     const a = e.target.dataset.a;
-    if (a === 'x') np.hidden = true;
+    if (a === 'x') closeAll();
     else if (a === 'noq') setQuote('');
     else if (a === 'save') add();
     else if (a === 'paste') {
@@ -110,22 +203,35 @@
   });
   ta.addEventListener('keydown', (e) => { if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) add(); });
 
-  fetch('books.json').then((r) => r.json()).catch(() => []).then((books) => {
+  // ---- 打开书 ----
+  let started = false;
+  const start = (books) => {
     const book = books.find((b) => b.id === q.get('id'));
-    url = book ? norm(book.url) : norm(q.get('url') || '');
-    if (!url) { location.replace('index.html'); return; }
+    const u = book ? norm(book.url) : norm(q.get('url') || '');
+    if (!u) return false;
+    started = true;
+    url = u;
     // 记入"最近阅读"；自定义地址用保存的书名（没有就用主机名，书架页可改名）
-    const title = window.WRR.touch({ url, title: book ? book.title : '', id: book ? book.id : '' }).title;
-    document.title = title;
-    $('t').textContent = title;
-    $('nt').textContent = `笔记 · ${title}`;
+    bookTitle = WRR.touch({ url, title: book ? book.title : '', id: book ? book.id : '' }).title;
+    // 笔记归属：书架上的书用 id，自定义地址用 "url:" + 去掉 # 的网址（同一本书的页内路由算同一本）
+    bookId = book ? book.id : 'url:' + WRR.keyOf(url);
+    document.title = bookTitle;
+    $('t').textContent = bookTitle;
+    $('nt').textContent = `笔记 · ${bookTitle}`;
     $('ext').href = url;
-    bookId = book ? book.id : '';
-    bookTitle = title;
-    if (bookId) try { localStorage.setItem('wr-last', bookId); } catch {}   // 分享进来的内容默认记到最近打开的这本书
+    $('allnotes').href = $('npall').href = `notes.html#book=${encodeURIComponent(bookId)}`;
+    try { localStorage.setItem('wr-last', bookId); } catch {}   // 分享进来的内容默认记到最近打开的这本书
     refresh();
     load();
-  });
+    return true;
+  };
+  // 书单先用本机副本（同步，不等网络），书立刻开始加载；同时后台刷新书单。
+  // 副本里没有这本书（比如刚加的新书）时才等网络。
+  const local = WRB.cached();
+  if (!q.get('id') || (local && local.some((b) => b.id === q.get('id')))) start(local || []);
+  WRB.refresh()
+    .then((l) => { if (!started && !start(l)) location.replace('index.html'); })
+    .catch(() => { if (!started && !start([])) location.replace('index.html'); });
 })();
 </script>
 <script src="update.js"></script>

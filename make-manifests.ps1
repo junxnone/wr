@@ -19,6 +19,7 @@ foreach ($b in $books) {
     scope = '../'
     id = "../reader.html?id=$($b.id)"
     display = 'standalone'
+    display_override = @('fullscreen', 'standalone')   # 支持的浏览器用全屏（隐藏状态栏），否则退回独立窗口
     orientation = 'any'
     background_color = '#ffffff'
     theme_color = '#2563eb'

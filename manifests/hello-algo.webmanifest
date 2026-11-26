@@ -1,0 +1,39 @@
+{
+    "name":  "Hello 算法",
+    "short_name":  "Hello 算法",
+    "description":  "动画图解、一键运行的数据结构与算法入门教程",
+    "start_url":  "../reader.html?id=hello-algo",
+    "scope":  "../",
+    "id":  "../reader.html?id=hello-algo",
+    "display":  "standalone",
+    "orientation":  "any",
+    "background_color":  "#ffffff",
+    "theme_color":  "#2563eb",
+    "lang":  "zh-CN",
+    "icons":  [
+                  {
+                      "src":  "../icons/icon-192.png",
+                      "sizes":  "192x192",
+                      "type":  "image/png",
+                      "purpose":  "any"
+                  },
+                  {
+                      "src":  "../icons/icon-512.png",
+                      "sizes":  "512x512",
+                      "type":  "image/png",
+                      "purpose":  "any"
+                  },
+                  {
+                      "src":  "../icons/icon-192.png",
+                      "sizes":  "192x192",
+                      "type":  "image/png",
+                      "purpose":  "maskable"
+                  },
+                  {
+                      "src":  "../icons/icon-512.png",
+                      "sizes":  "512x512",
+                      "type":  "image/png",
+                      "purpose":  "maskable"
+                  }
+              ]
+}

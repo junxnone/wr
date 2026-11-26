@@ -1,0 +1,6 @@
+[
+  { "id": "hello-algo", "title": "Hello 算法", "desc": "动画图解、一键运行的数据结构与算法入门教程", "url": "https://www.hello-algo.com/" },
+  { "id": "dicomp-mx", "title": "毛选", "desc": "毛泽东选集在线阅读", "url": "https://more.dicomp.net/mx/#/" },
+  { "id": "joyful-pandas", "title": "Joyful Pandas", "desc": "Datawhale：Pandas 学习与练习（Content）", "url": "https://inter.joyfulpandas.datawhale.club/Content/index.html" },
+  { "id": "csdiy", "title": "CS 自学指南", "desc": "csdiy.wiki：计算机科学自学课程汇总", "url": "https://csdiy.wiki/" }
+]

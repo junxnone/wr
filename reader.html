@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>阅读</title>
+<script>
+// 读哪本书就用哪本书的 manifest：此时点"安装"，装好的应用默认打开这本书（manifests/<id>.webmanifest 由 make-manifests.ps1 生成）
+(() => {
+  const id = new URLSearchParams(location.search).get('id') || '';
+  const l = document.createElement('link');
+  l.rel = 'manifest';
+  l.href = /^[\w-]+$/.test(id) ? `manifests/${id}.webmanifest` : 'manifest.webmanifest';
+  document.head.append(l);
+})();
+</script>
+<meta name="theme-color" content="#2563eb">
+<link rel="apple-touch-icon" href="icons/icon-180.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<style>
+  html, body { margin: 0; height: 100%; background: #fff; font: 14px/1.5 -apple-system, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif; }
+  #view { position: fixed; left: 0; right: 0; bottom: 0; top: env(safe-area-inset-top, 0); width: 100%; height: calc(100% - env(safe-area-inset-top, 0px)); border: 0; background: #fff; }
+  #fab { position: fixed; right: 12px; bottom: calc(12px + env(safe-area-inset-bottom, 0px)); z-index: 10; width: 36px; height: 36px; border: 0; border-radius: 50%; background: rgba(37, 99, 235, .75); color: #fff; font-size: 20px; line-height: 1; cursor: pointer; opacity: .55; }
+  #fab:hover, #fab:focus-visible { opacity: 1; }
+  #menu { position: fixed; right: 12px; bottom: calc(56px + env(safe-area-inset-bottom, 0px)); z-index: 10; width: min(300px, calc(100vw - 24px)); padding: 10px; border: 1px solid #d1d5db; border-radius: 10px; background: #fff; color: #111; box-shadow: 0 4px 18px rgba(0, 0, 0, .25); }
+  #menu[hidden], #hint[hidden] { display: none; }
+  #menu .title { margin: 0 0 8px; font-weight: 700; overflow-wrap: anywhere; }
+  #menu .row { display: flex; gap: 6px; flex-wrap: wrap; }
+  #menu button, #menu a { padding: 6px 10px; border: 1px solid #d1d5db; border-radius: 6px; background: #fff; color: #111; font: inherit; text-decoration: none; cursor: pointer; }
+  #hint { position: fixed; left: 12px; right: 60px; bottom: calc(12px + env(safe-area-inset-bottom, 0px)); z-index: 9; padding: 8px 12px; border-radius: 8px; background: rgba(17, 24, 39, .85); color: #fff; font-size: 13px; }
+</style>
+</head>
+<body>
+<iframe id="view" title="content" allow="fullscreen; clipboard-write" referrerpolicy="no-referrer-when-downgrade"></iframe>
+<div id="hint" hidden>如果一直空白，可能是该网站禁止被嵌入。点右下角 ⋯ →“在浏览器打开”。</div>
+<button id="fab" type="button" aria-label="菜单">⋯</button>
+<div id="menu" hidden>
+  <p class="title" id="t"></p>
+  <div class="row"><a href="index.html">← 书架</a><a id="ext" href="#" target="_blank" rel="noopener">在浏览器打开 ↗</a><button id="reload" type="button" title="跨域页面无法原地刷新，只能回到这本书的首页">回到首页</button></div>
+</div>
+<script>
+(() => {
+  const $ = (id) => document.getElementById(id);
+  const view = $('view'), menu = $('menu'), hint = $('hint');
+  const norm = (s) => { try { const u = new URL(s); return /^https?:$/.test(u.protocol) ? u.href : ''; } catch { return ''; } };
+  const q = new URLSearchParams(location.search);
+  let url = '';
+  const load = () => {
+    view.src = url;
+    hint.hidden = false;
+    clearTimeout(load.t);
+    load.t = setTimeout(() => { hint.hidden = true; }, 7000);
+  };
+  $('fab').addEventListener('click', () => { menu.hidden = !menu.hidden; });
+  $('reload').addEventListener('click', () => { menu.hidden = true; load(); });
+  addEventListener('blur', () => { if (document.activeElement === view) menu.hidden = true; });
+  if ('serviceWorker' in navigator) addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
+
+  fetch('books.json').then((r) => r.json()).catch(() => []).then((books) => {
+    const book = books.find((b) => b.id === q.get('id'));
+    url = book ? norm(book.url) : norm(q.get('url') || '');
+    if (!url) { location.replace('index.html'); return; }
+    const title = book ? book.title : new URL(url).hostname;
+    document.title = title;
+    $('t').textContent = title;
+    $('ext').href = url;
+    load();
+  });
+})();
+</script>
+</body>
+</html>

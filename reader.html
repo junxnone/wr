@@ -54,6 +54,7 @@
   <div class="nfoot"><button type="button" class="btn" data-a="paste" title="先在书里选中文字并复制（Ctrl+C），再点这里">粘贴为引用</button><button type="button" class="btn pri" data-a="save">保存</button></div>
 </div>
 <script src="notes.js"></script>
+<script src="recent.js"></script>
 <script>
 (() => {
   const $ = (id) => document.getElementById(id);
@@ -113,7 +114,8 @@
     const book = books.find((b) => b.id === q.get('id'));
     url = book ? norm(book.url) : norm(q.get('url') || '');
     if (!url) { location.replace('index.html'); return; }
-    const title = book ? book.title : new URL(url).hostname;
+    // 记入"最近阅读"；自定义地址用保存的书名（没有就用主机名，书架页可改名）
+    const title = window.WRR.touch({ url, title: book ? book.title : '', id: book ? book.id : '' }).title;
     document.title = title;
     $('t').textContent = title;
     $('nt').textContent = `笔记 · ${title}`;

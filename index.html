@@ -27,14 +27,37 @@
   .book em { margin-top: 8px; color: var(--sub); font-size: .75em; font-style: normal; overflow-wrap: anywhere; }
   .book .ext { position: absolute; top: 10px; right: 10px; padding: 2px 8px; border-radius: 6px; color: var(--sub); text-decoration: none; font-size: .95em; }
   .book .ext:hover { background: var(--bd); color: var(--accent); }
+  .go { display: flex; gap: 8px; margin: 0 0 8px; }
+  .go input { flex: 1; min-width: 0; padding: 10px 12px; border: 1px solid var(--bd); border-radius: 8px; background: var(--bg); color: var(--fg); font: inherit; }
+  .go input:focus { outline: 2px solid var(--accent); outline-offset: -1px; }
+  .go button { padding: 0 18px; border: 0; border-radius: 8px; background: var(--accent); color: #fff; font: inherit; cursor: pointer; }
+  .tip { margin: 0 0 20px; color: var(--sub); font-size: .8em; }
+  h2 { display: flex; align-items: baseline; justify-content: space-between; margin: 24px 0 10px; font-size: 1.1em; }
+  h2 button { border: 0; background: none; color: var(--sub); font: inherit; font-size: .8em; cursor: pointer; }
+  h2 button:hover { color: var(--accent); }
+  .book .tools { position: absolute; top: 8px; right: 8px; display: flex; gap: 2px; }
+  .book .tools button { padding: 2px 8px; border: 0; border-radius: 6px; background: none; color: var(--sub); font: inherit; cursor: pointer; }
+  .book .tools button:hover { background: var(--bd); color: var(--accent); }
+  .book.rc b { padding-right: 70px; }
 </style>
 </head>
 <body>
 <main>
   <h1>📚 书架</h1>
   <p class="sub">点击书名在应用内阅读；右上角 ↗ 在浏览器新标签页打开。 <a href="notes.html">📝 笔记</a> <a href="#" data-install hidden>📲 将书架添加到桌面</a></p>
+  <form class="go" id="go">
+    <input id="addr" type="text" inputmode="url" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="粘贴在线书籍地址，回车打开" aria-label="书籍网址">
+    <button type="submit">打开</button>
+  </form>
+  <p class="tip">任意网页都可以作为书打开。有些网站禁止被嵌入，打开后若一直空白，点右下角 ⋯ →“在浏览器打开”。</p>
+  <section id="recent" hidden>
+    <h2>最近阅读 <button type="button" id="clr">清空</button></h2>
+    <div class="books" id="rc"></div>
+  </section>
+  <h2>书架</h2>
   <div class="books" id="books"></div>
 </main>
+<script src="recent.js"></script>
 <script>
 (() => {
   const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
@@ -44,9 +67,57 @@
     try { host = new URL(b.url).host; } catch { console.warn('书架配置有误，已跳过：', b); return ''; }
     return `<div class="book"><a class="open" href="reader.html?id=${encodeURIComponent(b.id)}"><b>${esc(b.title)}</b><span>${esc(b.desc || '')}</span><em>${esc(host)}</em></a><a class="ext" href="${esc(b.url)}" target="_blank" rel="noopener" title="在浏览器新标签页打开">↗</a></div>`;
   };
+  let shelf = [];
   fetch('books.json').then((r) => r.json()).then((books) => {
+    shelf = books;
     document.getElementById('books').innerHTML = books.map(card).join('');
   }).catch(() => { document.getElementById('books').textContent = '书单加载失败'; });
+
+  // ---- 打开自定义地址 + 最近阅读 ----
+  const R = window.WRR;
+  const $ = (id) => document.getElementById(id);
+  const readerHref = (e) => e.id ? `reader.html?id=${encodeURIComponent(e.id)}` : `reader.html?url=${encodeURIComponent(e.url)}`;
+  const ago = (t) => {
+    const s = (Date.now() - t) / 1000;
+    if (s < 60) return '刚刚';
+    if (s < 3600) return Math.floor(s / 60) + ' 分钟前';
+    if (s < 86400) return Math.floor(s / 3600) + ' 小时前';
+    if (s < 86400 * 30) return Math.floor(s / 86400) + ' 天前';
+    return new Date(t).toLocaleDateString('zh-CN');
+  };
+  const renderRecent = () => {
+    const l = R.load();
+    $('recent').hidden = !l.length;
+    $('rc').innerHTML = l.map((e) => {
+      let host = '';
+      try { host = new URL(e.url).host; } catch {}
+      return `<div class="book rc" data-k="${esc(e.key)}"><a class="open" href="${esc(readerHref(e))}"><b>${esc(e.title)}</b><span>${esc(ago(e.ts))}</span><em>${esc(host)}</em></a><div class="tools"><button type="button" data-a="ren" title="改名">✎</button><button type="button" data-a="del" title="从最近阅读移除">×</button></div></div>`;
+    }).join('');
+  };
+  $('rc').addEventListener('click', (ev) => {
+    const b = ev.target.closest('button[data-a]');
+    if (!b) return;
+    const key = b.closest('.book').dataset.k;
+    const e = R.load().find((x) => x.key === key);
+    if (b.dataset.a === 'del') R.remove(key);
+    else if (b.dataset.a === 'ren' && e) {
+      const t = prompt('书名', e.title);
+      if (t && t.trim()) R.rename(key, t.trim().slice(0, 80));
+    }
+    renderRecent();
+  });
+  $('clr').addEventListener('click', () => { if (confirm('清空最近阅读记录？（不影响书架和笔记）')) { R.clear(); renderRecent(); } });
+
+  $('go').addEventListener('submit', (ev) => {
+    ev.preventDefault();
+    const url = R.parse($('addr').value);
+    if (!url) { alert('这不是有效的网址。例如：https://example.com/book/'); $('addr').focus(); return; }
+    // 地址就是书架上的某本书时，用书架的 id 打开（沿用它的书名和桌面图标）
+    const hit = shelf.find((b) => R.keyOf(b.url).replace(/\/$/, '') === R.keyOf(url).replace(/\/$/, ''));
+    location.href = hit ? `reader.html?id=${encodeURIComponent(hit.id)}` : `reader.html?url=${encodeURIComponent(url)}`;
+  });
+  renderRecent();
+  addEventListener('pageshow', renderRecent);   // 从阅读页返回时（含 bfcache）刷新列表
 })();
 </script>
 <script src="update.js"></script>

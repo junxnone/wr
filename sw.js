@@ -1,6 +1,6 @@
 // 只缓存外壳本身（同源）。被嵌入的跨域网站不经过这个 Service Worker，所以断网时只有外壳能打开。
-const CACHE = 'wr-v6';
-const SHELL = ['./', 'index.html', 'reader.html', 'notes.html', 'share.html', 'notes.js', 'notes.css', 'update.js', 'books.json', 'manifest.webmanifest', 'icons/icon-192.png', 'icons/icon-512.png', 'icons/icon-180.png'];
+const CACHE = 'wr-v7';
+const SHELL = ['./', 'index.html', 'reader.html', 'notes.html', 'share.html', 'notes.js', 'recent.js', 'notes.css', 'update.js', 'books.json', 'manifest.webmanifest', 'icons/icon-192.png', 'icons/icon-512.png', 'icons/icon-180.png'];
 
 // 不在 install 里 skipWaiting：新版本装好后等待，由页面上的"刷新"提示（update.js）发消息触发切换
 self.addEventListener('install', (e) => {
